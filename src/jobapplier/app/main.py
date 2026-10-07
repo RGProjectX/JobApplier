@@ -1,16 +1,29 @@
 import os
+from pathlib import Path
 
+import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from jobapplier.app.naukri.auth import NaukriAuthService
 from jobapplier.app.naukri.client import NaukriClient
 from jobapplier.app.naukri.jobs import NaukriJobService
+from jobapplier.app.naukri.model.Job import Job
 
 load_dotenv()
 
 app = FastAPI(title="JobApplier")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 naukri_client = NaukriClient()
@@ -29,6 +42,20 @@ class OTPVerifyRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+
+class ApplyRequest(BaseModel):
+    src: str = "drecomm_dashboard_apply"
+    mandatory_skills: list[str] = []
+    optional_skills: list[str] = []
+
+
+STATIC_DIR = Path(__file__).parent / "naukri" / "static"
+
+
+@app.get("/")
+async def index():
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/health")
@@ -82,6 +109,27 @@ async def share_early_interest():
     return await job_service.share_interest_for_early_jobs()
 
 
-@app.get("/jobs/naukri/search")
+@app.get("/jobs/naukri/search", response_model=list[Job])
 async def search_jobs(keyword: str, location: str = ""):
     return await job_service.search_jobs(keyword, location)
+
+
+@app.post("/jobs/naukri/{job_id}/apply")
+async def apply_to_job(job_id: str, body: ApplyRequest):
+    try:
+        return await job_service.apply_to_job(
+            job_id,
+            src=body.src,
+            mandatory_skills=body.mandatory_skills,
+            optional_skills=body.optional_skills,
+        )
+    except httpx.HTTPStatusError as e:
+        status = e.response.status_code
+        if status in (401, 403):
+            raise HTTPException(401, "Naukri session expired or blocked. Log in again.")
+        raise HTTPException(status, e.response.text)
+
+
+@app.get("/naukri/cookies")
+async def get_cookies():
+    return naukri_client.get_cookies()

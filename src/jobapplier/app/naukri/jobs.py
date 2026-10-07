@@ -74,3 +74,17 @@ class NaukriJobService:
 
     async def search_jobs(self, keyword: str, location: str = ""):
         return await self.naukri.search_jobs(keyword, location)
+
+    async def apply_to_job(
+        self,
+        job_id: str,
+        src: str = "drecomm_dashboard_apply",
+        mandatory_skills: list[str] | None = None,
+        optional_skills: list[str] | None = None,
+    ):
+        return await self.naukri.apply_to_job(
+            job_id,
+            src=src,
+            mandatory_skills=mandatory_skills,
+            optional_skills=optional_skills,
+        )

@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Naukri Job Search</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f5f7fb;
+            color: #172033;
+        }
+
+        .container {
+            width: min(1200px, calc(100% - 40px));
+            margin: 40px auto;
+        }
+
+        h1 {
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-top: 0;
+        }
+
+        .search-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 12px;
+            background: white;
+            padding: 18px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin: 25px 0;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d7dce5;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #4f46e5;
+        }
+
+        button {
+            border: 0;
+            border-radius: 8px;
+            padding: 11px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #4f46e5;
+            color: white;
+        }
+
+        button:hover {
+            background: #4338ca;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #status {
+            margin: 15px 0;
+            color: #6b7280;
+        }
+
+        .jobs {
+            display: grid;
+            gap: 16px;
+        }
+
+        .job-card {
+            position: relative;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .job-card.questionnaire {
+            border: 2px solid #f59e0b;
+            background: #fffbeb;
+        }
+
+        .questionnaire-badge {
+            display: inline-block;
+            background: #f59e0b;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .job-title {
+            margin: 0;
+            font-size: 19px;
+        }
+
+        .company {
+            margin-top: 5px;
+            color: #4b5563;
+            font-weight: 500;
+        }
+
+        .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .meta span {
+            background: #f1f5f9;
+            padding: 5px 9px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #475569;
+        }
+
+        .skills {
+            margin: 12px 0;
+        }
+
+        .skills-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #6b7280;
+            margin-bottom: 7px;
+        }
+
+        .skill-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .skill {
+            background: #eef2ff;
+            color: #4338ca;
+            padding: 5px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .description {
+            margin-top: 15px;
+            color: #4b5563;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 100px;
+            overflow: hidden;
+        }
+
+        .actions {
+            margin-top: 18px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .job-link {
+            color: #4f46e5;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .response {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            display: none;
+        }
+
+        .response.success {
+            border-color: #86efac;
+            background: #f0fdf4;
+        }
+
+        .response.error {
+            border-color: #fca5a5;
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 50px;
+            color: #6b7280;
+            background: white;
+            border-radius: 12px;
+        }
+
+        @media (max-width: 700px) {
+            .search-box {
+                grid-template-columns: 1fr;
+            }
+
+            .job-header {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Naukri Jobs</h1>
+        <p class="subtitle">Search and apply to jobs directly from your Naukri session.</p>
+
+        <form id="searchForm" class="search-box">
+            <input id="keyword" type="text" placeholder="Keyword e.g. Java Full Stack" required />
+
+            <input id="location" type="text" placeholder="Location e.g. Mumbai" />
+
+            <button type="submit" id="searchButton">
+                Search
+            </button>
+        </form>
+
+        <div id="status"></div>
+
+        <div id="jobs" class="jobs">
+            <div class="empty">
+                Search for jobs to get started.
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_BASE = "";
+
+        const searchForm = document.getElementById("searchForm");
+        const keywordInput = document.getElementById("keyword");
+        const locationInput = document.getElementById("location");
+        const searchButton = document.getElementById("searchButton");
+
+        const statusElement = document.getElementById("status");
+        const jobsContainer = document.getElementById("jobs");
+
+
+        searchForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const keyword = keywordInput.value.trim();
+            const location = locationInput.value.trim();
+
+            if (!keyword) {
+                return;
+            }
+
+            searchButton.disabled = true;
+            searchButton.textContent = "Searching...";
+            statusElement.textContent = "Searching Naukri...";
+            jobsContainer.innerHTML = "";
+
+            try {
+                const params = new URLSearchParams({
+                    keyword,
+                    location
+                });
+
+                const response = await fetch(
+                    `${API_BASE}/jobs/naukri/search?${params.toString()}`
+                );
+
+                if (!response.ok) {
+                    const error = await readResponse(response);
+                    throw new Error(error);
+                }
+
+                const data = await response.json();
+
+                /*
+                 * Your service may return the job list directly or
+                 * wrap it inside another property.
+                 *
+                 * Adjust this if your actual response shape differs.
+                 */
+                const jobs = Array.isArray(data)
+                    ? data
+                    : data.jobDetails ?? data.jobs ?? [];
+
+                renderJobs(jobs);
+
+                statusElement.textContent =
+                    `${jobs.length} job${jobs.length === 1 ? "" : "s"} found`;
+
+            } catch (error) {
+                statusElement.textContent = "";
+                jobsContainer.innerHTML = `
+                <div class="empty">
+                    <strong>Search failed</strong>
+                    <br><br>
+                    ${escapeHtml(error.message)}
+                </div>
+            `;
+            } finally {
+                searchButton.disabled = false;
+                searchButton.textContent = "Search";
+            }
+        });
+
+
+        function renderJobs(jobs) {
+            if (!jobs.length) {
+                jobsContainer.innerHTML = `
+                <div class="empty">
+                    No jobs found.
+                </div>
+            `;
+                return;
+            }
+
+            jobsContainer.innerHTML = jobs
+                .map((job, index) => createJobCard(job, index))
+                .join("");
+
+            jobs.forEach((job, index) => {
+                const button = document.getElementById(`apply-${index}`);
+
+                if (button) {
+                    button.addEventListener("click", () => applyJob(job, index));
+                }
+            });
+        }
+
+
+        function createJobCard(job, index) {
+
+            const skills = Array.isArray(job.skills)
+                ? job.skills
+                : [];
+
+            const mandatorySkills = skills.slice(0, 2);
+            const optionalSkills = skills.slice(2);
+
+            const questionnaireRequired =
+                Boolean(job.questionnaire_required);
+
+            return `
+            <div class="job-card ${questionnaireRequired ? "questionnaire" : ""}">
+
+                ${questionnaireRequired
+                    ? `<div class="questionnaire-badge">
+                            QUESTIONNAIRE REQUIRED
+                           </div>`
+                    : ""
+                }
+
+                <div class="job-header">
+
+                    <div>
+                        <h2 class="job-title">
+                            ${escapeHtml(job.title || "Untitled Job")}
+                        </h2>
+
+                        <div class="company">
+                            ${escapeHtml(job.company || "Unknown Company")}
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="meta">
+
+                    ${job.location
+                    ? `<span>📍 ${escapeHtml(job.location)}</span>`
+                    : ""
+                }
+
+                    ${job.experience
+                    ? `<span>💼 ${escapeHtml(job.experience)}</span>`
+                    : ""
+                }
+
+                    ${job.salary_text
+                    ? `<span>💰 ${escapeHtml(job.salary_text)}</span>`
+                    : ""
+                }
+
+                    ${job.posted
+                    ? `<span>🕒 ${escapeHtml(job.posted)}</span>`
+                    : ""
+                }
+
+                </div>
+
+
+                ${mandatorySkills.length
+                    ? `
+                            <div class="skills">
+                                <div class="skills-title">
+                                    MANDATORY SKILLS
+                                </div>
+
+                                <div class="skill-list">
+                                    ${mandatorySkills
+                        .map(
+                            skill =>
+                                `<span class="skill">
+                                                    ${escapeHtml(skill)}
+                                                </span>`
+                        )
+                        .join("")}
+                                </div>
+                            </div>
+                          `
+                    : ""
+                }
+
+
+                ${optionalSkills.length
+                    ? `
+                            <div class="skills">
+                                <div class="skills-title">
+                                    OPTIONAL SKILLS
+                                </div>
+
+                                <div class="skill-list">
+                                    ${optionalSkills
+                        .map(
+                            skill =>
+                                `<span class="skill">
+                                                    ${escapeHtml(skill)}
+                                                </span>`
+                        )
+                        .join("")}
+                                </div>
+                            </div>
+                          `
+                    : ""
+                }
+
+
+                ${job.description
+                    ? `
+                            <div class="description">
+                                ${stripHtml(job.description)}
+                            </div>
+                          `
+                    : ""
+                }
+
+
+                <div class="actions">
+
+                    <button
+                        id="apply-${index}"
+                        ${questionnaireRequired ? "" : ""}
+                    >
+                        Apply
+                    </button>
+
+                    ${job.job_url
+                    ? `
+                                <a
+                                    class="job-link"
+                                    href="${escapeAttribute(job.job_url)}"
+                                    target="_blank"
+                                >
+                                    View Job
+                                </a>
+                              `
+                    : ""
+                }
+
+                </div>
+
+
+                <div
+                    id="response-${index}"
+                    class="response"
+                ></div>
+
+            </div>
+        `;
+        }
+
+
+        async function applyJob(job, index) {
+
+            const button = document.getElementById(`apply-${index}`);
+            const responseElement =
+                document.getElementById(`response-${index}`);
+
+            const skills = Array.isArray(job.skills)
+                ? job.skills
+                : [];
+
+            const mandatorySkills = skills.slice(0, 2);
+            const optionalSkills = skills.slice(2);
+
+            button.disabled = true;
+            button.textContent = "Applying...";
+
+            responseElement.style.display = "none";
+            responseElement.className = "response";
+
+            try {
+
+                const response = await fetch(
+                    `/jobs/naukri/${encodeURIComponent(job.job_id)}/apply`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            src: "drecomm_dashboard_apply",
+
+                            mandatory_skills: mandatorySkills,
+
+                            optional_skills: optionalSkills
+                        })
+                    }
+                );
+
+
+                const data = await readResponse(response);
+
+
+                if (!response.ok) {
+                    throw new Error(
+                        typeof data === "string"
+                            ? data
+                            : JSON.stringify(data, null, 2)
+                    );
+                }
+
+
+                responseElement.className = "response success";
+                responseElement.textContent =
+                    typeof data === "string"
+                        ? data
+                        : JSON.stringify(data, null, 2);
+
+                responseElement.style.display = "block";
+
+                button.textContent = "Applied";
+
+            } catch (error) {
+
+                responseElement.className = "response error";
+                responseElement.textContent = error.message;
+                responseElement.style.display = "block";
+
+                button.disabled = false;
+                button.textContent = "Apply";
+            }
+        }
+
+
+        async function readResponse(response) {
+
+            const text = await response.text();
+
+            if (!text) {
+                return "";
+            }
+
+            try {
+                return JSON.parse(text);
+            } catch {
+                return text;
+            }
+        }
+
+
+        function stripHtml(html) {
+            const element = document.createElement("div");
+            element.innerHTML = html;
+
+            return element.textContent || element.innerText || "";
+        }
+
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) {
+                return "";
+            }
+
+            return String(value)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+
+        function escapeAttribute(value) {
+            return escapeHtml(value);
+        }
+    </script>
+
+</body>
+
+</html>

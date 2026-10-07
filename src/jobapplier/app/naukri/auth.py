@@ -12,4 +12,8 @@ class NaukriAuthService:
         return await self.naukri.verify_otp(phone, otp)
 
     async def login(self, email: str, password: str):
-        return await self.naukri.login(email, password)
+        response = await self.naukri.login(email, password)
+        login_status = response.get("userStateInfo", {}).get("userState")
+        return {
+            "login_status": login_status,
+        }
