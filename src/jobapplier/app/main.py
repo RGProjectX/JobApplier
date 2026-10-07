@@ -12,6 +12,7 @@ from jobapplier.app.naukri.auth import NaukriAuthService
 from jobapplier.app.naukri.client import NaukriClient
 from jobapplier.app.naukri.jobs import NaukriJobService
 from jobapplier.app.naukri.model.Job import Job
+from jobapplier.app.naukri.profile import NaukriProfileService
 
 load_dotenv()
 
@@ -29,6 +30,7 @@ app.add_middleware(
 naukri_client = NaukriClient()
 auth_service = NaukriAuthService(naukri_client)
 job_service = NaukriJobService(naukri_client)
+profile_service = NaukriProfileService(naukri_client)
 
 
 class OTPRequest(BaseModel):
@@ -102,6 +104,19 @@ async def verify_otp(request: OTPVerifyRequest):
 @app.get("/naukri/dashboard")
 async def dashboard():
     return await naukri_client.get_dashboard()
+
+
+@app.post("/profile/naukri/toggle-headline")
+async def toggle_headline():
+    try:
+        return await profile_service.toggle_headline()
+    except httpx.HTTPStatusError as e:
+        status = e.response.status_code
+        if status in (401, 403):
+            raise HTTPException(401, "Naukri session expired or blocked. Log in again.")
+        raise HTTPException(status, e.response.text)
+    except RuntimeError as e:
+        raise HTTPException(401, str(e))
 
 
 @app.post("/jobs/naukri/early-interest")

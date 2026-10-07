@@ -33,6 +33,39 @@
             margin-top: 0;
         }
 
+        .profile-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            background: white;
+            padding: 18px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin: 25px 0;
+        }
+
+        .profile-actions h2 {
+            margin: 0 0 5px;
+            font-size: 17px;
+        }
+
+        .profile-actions p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .profile-response {
+            margin: 0;
+            color: #166534;
+            font-size: 13px;
+        }
+
+        .profile-response.error {
+            color: #991b1b;
+        }
+
         .search-box {
             display: grid;
             grid-template-columns: 1fr 1fr auto;
@@ -227,6 +260,11 @@
                 grid-template-columns: 1fr;
             }
 
+            .profile-actions {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
             .job-header {
                 flex-direction: column;
             }
@@ -240,6 +278,19 @@
 
         <h1>Naukri Jobs</h1>
         <p class="subtitle">Search and apply to jobs directly from your Naukri session.</p>
+
+        <section class="profile-actions" aria-labelledby="profile-actions-title">
+            <div>
+                <h2 id="profile-actions-title">Profile headline</h2>
+                <p>Toggle the trailing period in your Naukri resume headline.</p>
+            </div>
+            <div>
+                <button type="button" id="toggleHeadlineButton">
+                    Toggle headline
+                </button>
+                <p id="profileResponse" class="profile-response" role="status" aria-live="polite"></p>
+            </div>
+        </section>
 
         <form id="searchForm" class="search-box">
             <input id="keyword" type="text" placeholder="Keyword e.g. Java Full Stack" required />
@@ -268,9 +319,47 @@
         const keywordInput = document.getElementById("keyword");
         const locationInput = document.getElementById("location");
         const searchButton = document.getElementById("searchButton");
+        const toggleHeadlineButton =
+            document.getElementById("toggleHeadlineButton");
+        const profileResponse = document.getElementById("profileResponse");
 
         const statusElement = document.getElementById("status");
         const jobsContainer = document.getElementById("jobs");
+
+        toggleHeadlineButton.addEventListener("click", toggleHeadline);
+
+        async function toggleHeadline() {
+            toggleHeadlineButton.disabled = true;
+            toggleHeadlineButton.textContent = "Updating...";
+            profileResponse.className = "profile-response";
+            profileResponse.textContent = "";
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/profile/naukri/toggle-headline`,
+                    { method: "POST" }
+                );
+                const data = await readResponse(response);
+
+                if (!response.ok) {
+                    throw new Error(
+                        typeof data === "string"
+                            ? data
+                            : data.detail || JSON.stringify(data)
+                    );
+                }
+
+                profileResponse.textContent =
+                    "Headline toggled successfully.";
+            } catch (error) {
+                profileResponse.className = "profile-response error";
+                profileResponse.textContent =
+                    error.message || "Unable to toggle headline.";
+            } finally {
+                toggleHeadlineButton.disabled = false;
+                toggleHeadlineButton.textContent = "Toggle headline";
+            }
+        }
 
 
         searchForm.addEventListener("submit", async (event) => {

@@ -15,6 +15,10 @@ uv run python -m jobapplier.app.scheduled_profile_update
 The scheduled job logs in to Naukri, toggles the trailing period in the
 resume headline, and closes the HTTP client when it finishes.
 
+When the FastAPI app is running, the same action is available through
+`POST /profile/naukri/toggle-headline`. The web page served at `/` includes a
+button for invoking this endpoint and displays the result.
+
 ## Run every three hours with GitHub Actions
 
 The workflow in `.github/workflows/update-profile.yml` runs at minute `00`
